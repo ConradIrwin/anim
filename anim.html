@@ -1,0 +1,131 @@
+<meta charset="utf-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.js"></script>
+
+<style>
+  body {
+    background:  rgba(239, 243, 253, 0.3);
+  }
+
+  canvas {
+    width: 32px;
+    height: 32px;
+  }
+</style>
+
+<body>
+<img src="s.png" width="32" height="32"/>
+<canvas width="32" height="32"></canvas>
+<img src="x.png" width="32" height="32"/>
+
+<script>
+  var canvas = document.getElementsByTagName("canvas")[0];
+
+  var scale = d3.scale.linear().domain([0, 32]).range([0, canvas.width]);
+  var xScale = scale, yScale = scale;
+
+  var t = 1000;
+
+  context = canvas.getContext('2d');
+
+  var handleStartPosition = d3.scale.linear().range([1, 20]);
+  var arcRadius = d3.scale.linear().range([6, 1000]);
+
+  function render() {
+      context.clearRect(xScale(0), yScale(0), xScale(32), yScale(32));
+      context.strokeStyle = "#C6C7CA";
+      context.lineWidth = 2.5;
+
+      if (t == 0) { // draw a cross.
+
+        context.beginPath();
+        context.moveTo(xScale(1), yScale(1));
+        context.lineTo(xScale(31), yScale(31));
+
+        context.moveTo(xScale(31), yScale(1));
+        context.lineTo(xScale(1), yScale(31));
+        context.stroke();
+
+        return true;
+
+      } else if (t == 1) { // draw a magnifying glass.
+
+        context.beginPath();
+        context.moveTo(xScale(31), yScale(31));
+        context.lineTo(xScale(20), yScale(20));
+        context.stroke();
+
+        context.beginPath();
+        context.arc(xScale(12), xScale(12), scale(11), 0, Math.PI * 2);
+        context.stroke();
+
+        return true;
+
+      } else {
+
+        var handleStart = handleStartPosition(t);
+        var radius = d3.scale.linear().range([80, 11])(t);
+        var centerOffset = Math.sqrt(Math.pow(radius, 2) / 2);
+
+        var centerPosition = d3.scale.linear().range([16, 12 + Math.sqrt(Math.pow(11, 2) / 2)])(t);
+        var edgePosition = d3.scale.linear().range([31, 12])(t)
+        var edgeTangent = d3.scale.linear().range([Math.PI, 1.75 * Math.PI])(t);
+
+
+        var arcWidth = d3.scale.linear().range([Math.PI * 2, 0.106])(t);
+
+        if (radius < 0) {
+          return false;
+        }
+
+        context.beginPath();
+
+        context.moveTo(xScale(31), yScale(31));
+        context.lineTo(xScale(handleStart), yScale(handleStart));
+        context.stroke();
+
+        context.beginPath();
+        //context.arc(xScale(centerPosition - centerOffset), xScale(centerPosition - centerOffset), scale(radius), 3.9269908169872414 + arcWidth / 2, Math.PI * 2 + 3.9269908169872414 - arcWidth / 2);
+
+        var p1x = (2 * centerPosition - 1 + Math.sqrt(Math.pow(2 * centerPosition - 1, 2) - 4 * Math.atan(edgeTangent) * edgePosition)) / (2 * Math.atan(edgeTangent));
+        var p1y = 2 * centerPosition - p1x;
+
+        console.log(centerPosition, centerPosition, p1x, p1y, edgePosition, 1);
+
+        context.moveTo(xScale(edgePosition), yScale(1));
+        context.arcTo(xScale(p1x), yScale(p1y), xScale(centerPosition), yScale(centerPosition), 11);
+        context.lineTo(xScale(centerPosition), yScale(centerPosition));
+
+        context.moveTo(xScale(1), yScale(edgePosition));
+        context.arcTo(xScale(p1y), yScale(p1x), xScale(centerPosition), yScale(centerPosition), 11);
+        context.lineTo(xScale(centerPosition), yScale(centerPosition));
+
+        //context.lineTo(xScale(p1y), yScale(p1x));
+        //context.lineTo(xScale(1), yScale(edgePosition));
+
+        context.stroke();
+
+      }
+  }
+
+  document.addEventListener('click', function () {
+
+    var tSpeed = d3.scale.linear().domain([0, 200]);
+    var tEase = d3.scale.linear().clamp(true);
+    var tDirection;
+
+    if (t === 0) {
+      tDirection = d3.scale.linear().range([0,01, 1]);
+    } else {
+      tDirection = d3.scale.linear().range([0.99, 0]);
+    }
+
+    d3.timer(function (_t) {
+      t = tDirection(tEase(tSpeed(_t)));
+      return render();
+    });
+
+    render();
+  });
+
+
+</script>
